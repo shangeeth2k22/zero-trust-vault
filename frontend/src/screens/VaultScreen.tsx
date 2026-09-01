@@ -1,5 +1,5 @@
 import 'react-native-get-random-values';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,7 +11,9 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Alert
+  Alert,
+  ActivityIndicator,
+  RefreshControl
 } from 'react-native';
 import CryptoJS from 'crypto-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -23,6 +25,51 @@ export default function VaultScreen({ navigation }: { navigation: any }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [notes, setNotes] = useState<{ id: string, title: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchNotes = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        navigation.replace('Login');
+        return;
+      }
+
+      const response = await fetch('http://10.0.2.2:5000/api/notes', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok && Array.isArray(data)) {
+        const formattedNotes = data.map((item: any) => ({
+          id: item._id || item.id,
+          title: item.title,
+        }));
+        setNotes(formattedNotes);
+      } else {
+        console.error('Fetch notes error:', data.message);
+      }
+    } catch (error) {
+      console.error('Connection error while fetching notes:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotes();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchNotes();
+  };
 
   const handleSave = async () => {
     if (!title || !content) {
@@ -78,7 +125,11 @@ export default function VaultScreen({ navigation }: { navigation: any }) {
         </TouchableOpacity>
       </View>
 
-      {notes.length === 0 ? (
+      {loading ? (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="large" color="#ffffff" />
+        </View>
+      ) : notes.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateText}>No items stored yet.</Text>
         </View>
@@ -87,6 +138,9 @@ export default function VaultScreen({ navigation }: { navigation: any }) {
           data={notes}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ffffff" />
+          }
           renderItem={({ item }) => (
             <View style={styles.noteCard}>
               <Text style={styles.noteTitle}>{item.title}</Text>
@@ -123,7 +177,14 @@ export default function VaultScreen({ navigation }: { navigation: any }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000000' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 50,
+    paddingBottom: 24
+  },
   headerTitle: { fontSize: 32, fontWeight: '700', color: '#ffffff', letterSpacing: 0.3 },
   logoutText: { color: '#ff453a', fontSize: 16, fontWeight: '500' },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },

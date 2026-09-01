@@ -46,7 +46,7 @@ router.post('/login', async (req, res) => {
 
     // 3. Generate the secure token
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user._id.toString() },
       process.env.JWT_SECRET,
       { expiresIn: '1h' } // Token expires in 1 hour for security
     );

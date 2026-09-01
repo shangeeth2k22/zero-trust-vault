@@ -36,4 +36,18 @@ router.post('/', verifyToken, async (req, res) => {
     }
 });
 
+// GET: Fetch all encrypted notes for the logged-in user
+router.get('/', verifyToken, async (req, res) => {
+    try {
+        console.log("Searching for ID:", req.user.userId);
+
+        // Find notes matching the user's ID and sort by newest first
+        const notes = await Note.find({ user: req.user.userId }).sort({ _id: -1 });
+        res.status(200).json(notes);
+    } catch (error) {
+        console.error(`[Fetch Error]: ${error.message}`);
+        res.status(500).json({ message: 'Failed to fetch notes.' });
+    }
+});
+
 module.exports = router;
