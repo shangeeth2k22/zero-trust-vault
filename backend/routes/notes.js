@@ -50,4 +50,45 @@ router.get('/', verifyToken, async (req, res) => {
     }
 });
 
+// PUT: Update an existing encrypted note
+router.put('/:id', verifyToken, async (req, res) => {
+    try {
+        const { title, encryptedContent } = req.body;
+
+        const updatedNote = await Note.findOneAndUpdate(
+            { _id: req.params.id, user: req.user.userId },
+            { title, encryptedContent },
+            { returnDocument: 'after' }
+        );
+
+        if (!updatedNote) {
+            return res.status(404).json({ message: 'Note not found or unauthorized.' });
+        }
+
+        res.status(200).json(updatedNote);
+    } catch (error) {
+        console.error(`[Update Error]: ${error.message}`);
+        res.status(500).json({ message: 'Failed to update note.' });
+    }
+});
+
+// DELETE: Delete a note permanently
+router.delete('/:id', verifyToken, async (req, res) => {
+    try {
+        const deletedNote = await Note.findOneAndDelete({
+            _id: req.params.id,
+            user: req.user.userId
+        });
+
+        if (!deletedNote) {
+            return res.status(404).json({ message: 'Note not found or unauthorized.' });
+        }
+
+        res.status(200).json({ message: 'Note deleted successfully.' });
+    } catch (error) {
+        console.error(`[Delete Error]: ${error.message}`);
+        res.status(500).json({ message: 'Failed to delete note.' });
+    }
+});
+
 module.exports = router;

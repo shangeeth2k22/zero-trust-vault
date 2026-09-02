@@ -29,6 +29,6 @@ app.get('/', (req, res) => {
 });
 
 // Server Initialization
-app.listen(PORT, () => {
-    console.log(`[Server] Active on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[Server] Active on port ${PORT} (0.0.0.0)`);
 });
