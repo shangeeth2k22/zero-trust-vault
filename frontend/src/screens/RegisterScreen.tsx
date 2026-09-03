@@ -153,7 +153,11 @@ export default function RegisterScreen({ navigation }: { navigation: any }) {
                                     value={email}
                                     onChangeText={setEmail}
                                     autoCapitalize="none"
+                                    autoCorrect={false}
+                                    spellCheck={false}
                                     keyboardType="email-address"
+                                    textContentType="emailAddress"
+                                    autoComplete="email"
                                 />
                             </View>
 
